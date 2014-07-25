@@ -1,0 +1,12 @@
+bank:
+    r: 5
+    b: 5
+    g: 5
+    B: 5
+    W: 5
+    A: 5
+cmd_dict:
+    Bank:
+        check_can_draw2: True
+        check_draw: True
+        check_neg: True

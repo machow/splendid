@@ -21,17 +21,5 @@ for ii in range(1, 4):
     
 
 G = Game(2, config['bank'], decks, config['cmd_dict'])
-
-print "STRING TEST"
-print G.decks[0]
-print G.bank
-print G.decks[0].deck[0]
-print G._players[0]
-print "\n\n"
-
-G('do_draw', 'rr')
-print G
-G('do_draw', 'WW')
-G('do_draw', 'Brg')
-G('do_draw', 'BB')
-G('do_buy', '40 Brrrg')
+import pickle
+pickle.dump(G, open('game_default.pickle', 'wb'))

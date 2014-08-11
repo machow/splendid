@@ -9,7 +9,9 @@ class test_move:
         self.B = Bank('rrrrggA')
         lands = [dict(id=ii, cost='r'*ii,type='B', pv=ii) for ii in range(1,6)]
         lands.reverse()
-        self.decks = [LandDeck(1, 4, lands=lands, shuffle=False)]
+        deck = LandDeck(1, 4, lands=lands)
+        deck.deal()
+        self.decks = [deck]
 
     def test_do_draw_gems_conserved(self):
         # has one r, adds 2
@@ -18,6 +20,7 @@ class test_move:
         assert self.B.gems['r'] == 2
 
     def test_do_buy(self):
+        print self.decks[0]
         L = self.decks[0].take(1)
         M.do_buy(1, 'r', self.B, self.decks, self.P)
         assert self.P.lands[0] is L

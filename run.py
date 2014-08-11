@@ -1,26 +1,13 @@
-from splendid.classes import Bank, Wallet, Game, LandDeck
+from splendid.classes import Game
+from splendid.tools import decks_from_csv
 import yaml
-import csv
 config = yaml.load(open('config.yaml'))
 
-#W = Wallet()
-#B = Bank(config['bank'])
+decks = decks_from_csv('misc/lands.csv')
+nobles = decks_from_csv('misc/nobles.csv')[0]
 
-land_data = []
-for row in csv.DictReader(open('misc/lands.csv', 'rU')):
-    cost = {k:int(v) for k, v in row.iteritems() if len(k) == 1}
-    kwargs = {k:int(v) for k, v in row.iteritems() if k in ('id', 'pv', 'tier')}
-    kwargs['cost'] = cost
-    kwargs['type'] = row['type']
-    land_data.append(kwargs)
-
-decks = []
-for ii in range(1, 4):
-    lands = filter(lambda d: d['tier'] == ii, land_data)
-    decks.append(LandDeck(tier=ii, max_on_table=4, lands=lands, shuffle=False))
-    
-
-G = Game(2, config['bank'], decks, config['cmd_dict'])
+G = Game(config['bank'], decks, nobles, config['cmd_dict'])
+G.start(['player1', 'player2'], shuffle=False) 
 
 print "STRING TEST"
 print G.decks[0]
@@ -35,3 +22,11 @@ G('do_draw', 'WW')
 G('do_draw', 'Brg')
 G('do_draw', 'BB')
 G('do_buy', '40 Brrrg')
+G._players[0].wallet.gems.update('r'*10 + 'b'*10 + 'B'*10 + 'g'*10 + 'W'*10)
+G('draw', 'rr')
+G('buy', '39 rbbWW')
+G('reserve', '90')
+for land in G.decks[0].deck:
+    if land.type == 'W': G._players[0].lands.append(land)
+for land in G.decks[0].deck:
+    if land.type == 'B': G._players[0].lands.append(land)

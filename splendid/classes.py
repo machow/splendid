@@ -1,6 +1,6 @@
 from errors import MoveError
 from collections import Counter
-class Wallet:
+class Wallet(object):
     def __init__(self, gems=None):
         """Takes dict {'r':5, 'b': 4, ...} or iterable to feed to Counter"""
         if type(gems) == dict: 
@@ -73,15 +73,16 @@ class Bank(Wallet):
         """Return True if gem_str follows rules of draw types"""
         # str is either 'A', 2 of one color, or 3 different colors
         unique = len(set(gem_str))
-        good = (len(gem_str) == 1 and gem_str == 'A') or \
-               (len(gem_str) == 2 and unique == 1) or \
-               (len(gem_str) == unique == 3)
+        has_wild = 'A' in gem_str
+        good = (len(gem_str) == 1 and has_wild) or \
+               (len(gem_str) == 2 and unique == 1 and not has_wild) or \
+               (len(gem_str) == unique == 3 and not has_wild)
         if safe and not good: raise MoveError(103, 'invalid draw')
         
         return good
         
 
-class Land:
+class Land(object):
     def __init__(self, id, cost, type, pv, owner=None, tier=None):
         """kwargs out of laziness, tier was put into spreadsheet, need to fix"""
         self.id = int(id)
@@ -121,7 +122,7 @@ class Land:
 
 
 import random
-class LandDeck:
+class LandDeck(object):
     """Used for each deck of lands. Cards are drawn from .deck to .table.
     
     Cards in player hands should go into .elsewhere"""
@@ -215,7 +216,7 @@ class Moves:
             raise MoveError(105, "cannot afford noble")
         
     
-class Player:
+class Player(object):
     def __init__(self, name):
         self.name = name
         self.reserve = []
@@ -257,9 +258,8 @@ class Player:
 import inspect
 import copy
 import pickle
-class Game(Moves):
+class Game(Moves, object):
     def __init__(self, bank, decks, nobles, cmd_dict=None, point_goal=15):
-        self._hist = {}
         self._stages = (['do_draw', 'do_reserve', 'do_buy'],
                         ['do_noble']
                         )
@@ -284,6 +284,9 @@ class Game(Moves):
         self.remaining_stages = self._stages[:]
         self.winner = None
 
+        # initial state for recording history
+        self._initial_state = copy.deepcopy(self)
+        self._hist = []
 
     @property
     def crnt_player(self):
@@ -292,7 +295,7 @@ class Game(Moves):
     def crnt_stage(self):
         return self.remaining_stages[0]
 
-    def __call__(self, cmd, string):
+    def __call__(self, cmd, string, player=None):
         """Submit turn for Game.
 
         Parameters:
@@ -300,6 +303,8 @@ class Game(Moves):
             string: args to feed to cmd, split by spaces
 
         """
+        if player and player != self.crnt_player.name: 
+            raise MoveError(110, text='it is the turn of %s'%self.crnt_player.name)
         if 'do_' not in cmd: cmd = 'do_' + cmd
         args = string.split(' ')
         crnt_stage = self.remaining_stages[0]
@@ -317,6 +322,7 @@ class Game(Moves):
             self._next_stage()
             #print self.crnt_player
             #print self.bank
+            self.update_hist(cmd=cmd, string=string)
         else: raise BaseException('no') 
 
     def _next_stage(self):
@@ -395,10 +401,6 @@ class Game(Moves):
         """save game as pickled data in folder"""
         pickle.dump(self, open(fname, 'wb'))
 
-    def update_hist(self):
-        newG = copy.deepcopy(self)
+    def update_hist(self, **kwargs):
         # Remove history so it doesn't become exp large
-        newG._hist = {}
-        playernum = self._players.index(self.crnt_player)
-        key = "{turn}_{playernum}".format(turn=self.turn, playernum=playernum)
-        self._hist[key] = newG
+        self._hist.append(kwargs)

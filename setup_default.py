@@ -10,3 +10,4 @@ nobles = decks_from_csv('misc/nobles.csv')[0]
 G = Game(config['bank'], decks, nobles, config['cmd_dict'])
 import pickle
 pickle.dump(G, open('game_default.pickle', 'wb'))
+pickle.dump([config['bank'], decks, nobles, config['cmd_dict']], open('game_args.pickle', 'wb'))

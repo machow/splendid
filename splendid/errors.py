@@ -5,7 +5,8 @@ class MoveError(Exception):
     103: "invalid draw type (e.g. even before checks. value is str)",
     104: "can't buy land with gem amount (str)",
     105: "tried to reserve land not on table or can't afford (str)",
-    106: "tried to reserve a land, but already have 3 reservations"
+    106: "tried to reserve a land, but already have 3 reservations",
+    110: "not your turn!"
     }
     def __init__(self, code, value=None, text=None):
         self.code = code

@@ -27,7 +27,7 @@ class Wallet(object):
         if safe and neg:
             raise MoveError(101, neg)
 
-        return neg
+        return Counter(neg)
 
     def __str__(self):
         sorted_gems = sorted(self.gems.items(), key=lambda l: l[0])
@@ -98,9 +98,12 @@ class Land(object):
         ttl = sum(remain.values())
         # Checks
         enough_gems = payment['A'] == ttl
-        neg = self.cost.check_neg(gem_str.replace('A', ''), base=base, safe=safe)
+        neg = self.cost.check_neg(gem_str.replace('A', ''), base=base)
 
-        if safe and not enough_gems: raise MoveError(104, remain)
+        if safe and not enough_gems:
+            raise MoveError(104, remain, 'following gems required for purchase (%s)'%str(Wallet(remain)))
+        if safe and neg:
+            raise MoveError(104, neg, 'excess gems paid (%s)'%str(Wallet(neg)))
         return enough_gems and not neg
 
     def __int__(self):
@@ -194,7 +197,7 @@ class Moves:
     def do_buy(self, land_id, gem_str, bank, decks,  player):
         for Deck in decks:
             L = Deck.take(land_id)
-            if L and L.check_can_buy(gem_str, player.land_bonus):
+            if L and L.check_can_buy(gem_str, player.land_bonus, safe=True):
                 Deck.take(land_id, remove=True)
                 player.wallet.take(gem_str)
                 bank.put(gem_str)
@@ -314,16 +317,18 @@ class Game(Moves, object):
             # inspect for bank or decks arguments
             funcsig = inspect.getargspec(action)[0]
             kwargs = {k: getattr(self, k) for k in ['bank', 'decks', 'nobles'] if k in funcsig}
+            pad_args = args + [""]*(len(funcsig) - 4 - len(args))    # make all nonspecified arguments empty strings
 
             # call command
-            action(*args, player=self.crnt_player, **kwargs)
+            action(*pad_args, player=self.crnt_player, **kwargs)
             #print self.crnt_player
 
             self._next_stage()
             #print self.crnt_player
             #print self.bank
             self.update_hist(cmd=cmd, string=string)
-        else: raise BaseException('no') 
+        else:
+            raise MoveError(111)
 
     def _next_stage(self):
         self.remaining_stages = self.remaining_stages[1:]

@@ -195,7 +195,10 @@ class Moves:
         else: raise MoveError(105, "no land with that id")
 
     def do_buy(self, land_id, gem_str, bank, decks,  player):
-        for Deck in decks:
+        # hack to allow players to buy reserved lands
+        reserve = LandDeck('reserve', 0)
+        reserve.table = player.reserve
+        for Deck in decks + [reserve]:
             L = Deck.take(land_id)
             if L and L.check_can_buy(gem_str, player.land_bonus, safe=True):
                 Deck.take(land_id, remove=True)
@@ -203,7 +206,8 @@ class Moves:
                 bank.put(gem_str)
                 L.owner = player.name
                 player.lands.append(L)
-                Deck.draw(1)
+                # only draw card if purchase not from reserve deck
+                if Deck.tier != 'reserve': Deck.draw(1)
                 break
         else: raise MoveError(105, "no matching id or cannot afford") 
 
